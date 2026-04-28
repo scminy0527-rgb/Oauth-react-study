@@ -20,6 +20,7 @@ const Login = () => {
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[!@#])[\da-zA-Z!@#]{8,}$/;
 
   // 전역 상태에서 유저 정보 저장 함수, 인증 상태 변경 함수 가져오기
+  // 주스탠드로 가져오기
   const { setMember, setIsAuthenticated } = useAuthStore();
 
   // 페이지 이동 함수
@@ -69,8 +70,12 @@ const Login = () => {
               pattern: { value: emailRegex },
             })}
           />
-          {errors.memberEmail?.type === "required" && <p>이메일을 입력하세요</p>}
-          {errors.memberEmail?.type === "pattern" && <p>이메일 형식에 맞게 입력해주세요</p>}
+          {errors.memberEmail?.type === "required" && (
+            <p>이메일을 입력하세요</p>
+          )}
+          {errors.memberEmail?.type === "pattern" && (
+            <p>이메일 형식에 맞게 입력해주세요</p>
+          )}
         </div>
 
         <div>
@@ -82,9 +87,14 @@ const Login = () => {
               pattern: { value: passwordRegex },
             })}
           />
-          {errors.memberPassword?.type === "required" && <p>비밀번호를 입력해주세요</p>}
+          {errors.memberPassword?.type === "required" && (
+            <p>비밀번호를 입력해주세요</p>
+          )}
           {errors.memberPassword?.type === "pattern" && (
-            <p>소문자, 숫자, 특수문자(!@#)를 각 하나씩 포함한 8자리 이상이어야 합니다</p>
+            <p>
+              소문자, 숫자, 특수문자(!@#)를 각 하나씩 포함한 8자리 이상이어야
+              합니다
+            </p>
           )}
         </div>
 
