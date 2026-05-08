@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "c:\\Users\\scminy0527\\Desktop\\dev-edu\\back_0900_scm\\spring\\workspace\\oauth\\src\\main\\java\\com\\app\\oauth\\util",
+      "c:\\Users\\scminy0527\\Desktop\\dev-edu\\back_0900_scm\\spring\\workspace\\oauth\\src\\main\\java\\com\\app\\oauth\\service",
+      "c:\\Users\\scminy0527\\Desktop\\dev-edu\\back_0900_scm\\spring\\workspace\\oauth\\src\\main\\java\\com\\app\\oauth\\domain\\vo"
+    ]
+  }
+}

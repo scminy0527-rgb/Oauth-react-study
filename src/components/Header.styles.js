@@ -1,6 +1,20 @@
-export const headerStyle = {
-  padding: "10px 20px",
-  borderBottom: "1px solid #ccc",
-  display: "flex",
-  gap: "16px",
-};
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+
+const S = {};
+
+S.Header = styled.header`
+  display: flex;
+  align-items: center;
+  height: 40px;
+  border-bottom: solid 1px black;
+  padding: 0 20px;
+  justify-content: flex-end;
+`;
+
+S.Link = styled(Link)`
+  text-decoration: none;
+  margin-right: 6px;
+`;
+
+export default S;

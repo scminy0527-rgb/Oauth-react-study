@@ -1,5 +1,6 @@
 // 모든 API 요청의 기본 URL
 const BASE = "http://localhost:10000/api";
+const PRIVATE_BASE = "http://localhost:10000/private/api";
 
 // 공통 요청 함수: url, fetch 옵션, 인증 옵션을 받아서 요청 후 { message, data } 반환
 // 응답이 실패(4xx, 5xx)면 서버 메시지로 에러를 throw → 호출부 catch에서 처리
@@ -44,9 +45,33 @@ export const loginPost = (url, data) =>
     { credentials: "include" }
   );
 
+// 인증이 필요한 POST 요청: credentials: "include" → 쿠키(refreshToken)를 함께 전송
+export const securePost = (url, data) =>
+  request(
+    url,
+    { method: "POST", body: data ? JSON.stringify(data) : undefined },
+    { credentials: "include" }
+  );
+
 // PUT 요청 (수정)
 export const put = (url, data) =>
   request(url, { method: "PUT", body: JSON.stringify(data) });
 
 // DELETE 요청 (삭제)
 export const del = (url) => request(url, { method: "DELETE" });
+
+// /private/api 경로로 인증이 필요한 POST 요청
+const privateRequest = async (url, options = {}) => {
+  const response = await fetch(`${PRIVATE_BASE}${url}`, {
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    ...options,
+  });
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(body?.message);
+  return { message: body?.message ?? null, data: body?.data ?? null };
+};
+
+export const securePrivatePost = (url, data) =>
+  privateRequest(url, { method: "POST", body: data ? JSON.stringify(data) : undefined });

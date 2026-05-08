@@ -1,43 +1,58 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { handleError } from "../../api/errerHandler";
-import { joinMember } from "../../api/MemberApi";
 
+// 회원가입
 const MemberJoin = () => {
   const {
     register,
     handleSubmit,
     getValues,
-    formState: { isSubmitting, errors },
+    formState: { isSubmitting, isSubmitted, errors },
   } = useForm({ mode: "onChange" });
-
-  // 정규식 (검증 용)
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const passwordRegex = /^(?=.*\d)(?=.*[a-z])(?=.*[!@#])[\da-zA-Z!@#]{8,}$/;
+  const navigate = useNavigate();
 
-  const navigator = useNavigate();
-
-  // 회원가입 함수 정의
   const join = handleSubmit(async (data) => {
-    // 테스트 용 연습
     console.log(data);
-    const { memberPasswordConfirm, ...memberJoinRequestDTO } = data;
+    const { memberPasswordConfirm, ...memberDTO } = data;
+    // 파일 올리기
+    // 업로드 완료 되면 완료된 주소를 받아오기
+    // 해당 받아온 새로운 경로를 가지고 프로필 리랜더랑
 
-    joinMember(memberJoinRequestDTO)
-      .then(({ message, success, data }) => {
-        console.log(message);
-        console.log(success);
-        console.log(data);
-
-        navigator("/login");
+    await fetch("http://localhost:10000/api/members/join", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(memberDTO),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const error = await res.json();
+          console.log(error);
+          throw new Error(error?.message);
+        }
+        return await res.json();
       })
-      .catch(handleError);
+      .then((res) => {
+        // 정상 응답일 때
+        console.log(res);
+        const { success, message, data } = res;
+        if (success) {
+          alert(`${message}(${data.memberProvider})`);
+          navigate("/member/login");
+        }
+      })
+      .catch((err) => {
+        // error 처리!
+        alert(err.message);
+      });
   });
 
   return (
     <div>
-      회원가입
       <form onSubmit={join}>
         <div>
           <p>이메일</p>
@@ -49,11 +64,12 @@ const MemberJoin = () => {
               },
             })}
           />
-          {errors.memberEmail?.type === "required" && (
+          {errors && errors?.memberEmail?.type === "required" && (
             <p>이메일을 입력하세요</p>
           )}
-          {errors.memberEmail?.type === "pattern" && (
-            <p>이메일 형식을 지켜주세요</p>
+
+          {errors && errors?.memberEmail?.type === "pattern" && (
+            <p>이메일 양식에 맞게 입력해주세요.</p>
           )}
         </div>
         <div>
@@ -66,12 +82,12 @@ const MemberJoin = () => {
               },
             })}
           />
-          {errors.memberPassword?.type === "required" && (
-            <p>비밀번호를 입력하세요</p>
+          {errors && errors?.memberPassword?.type === "required" && (
+            <p>비밀번호를 입력해주세요.</p>
           )}
-          {errors.memberPassword?.type === "pattern" && (
+          {errors && errors?.memberPassword?.type === "pattern" && (
             <p>
-              소문자, 숫자, 특수문자를 각 하니씩 포함한 8자리 이상이어야 합니다.
+              소문자, 숫자, 특수문자를 각 하나씩 포함한 8자리 이상이여야 합니다.
             </p>
           )}
         </div>
@@ -80,19 +96,21 @@ const MemberJoin = () => {
           <input
             {...register("memberPasswordConfirm", {
               required: true,
-              validate: (value) => {
-                // getValues 통해서 기존에 입력한 값 가져올 수 있음
-                const isMatch = value === getValues("memberPassword");
-                console.log("비밀번호 일치 여부:", isMatch);
-                return isMatch;
+              validate: {
+                matchPassword: (memberPasswordConfirm) => {
+                  const { memberPassword } = getValues();
+                  console.log(
+                    memberPassword,
+                    memberPasswordConfirm,
+                    memberPassword === memberPasswordConfirm,
+                  );
+                  return memberPassword === memberPasswordConfirm;
+                },
               },
             })}
           />
-          {errors.memberPasswordConfirm?.type === "required" && (
-            <p>비밀번호 확인을 입력하세요</p>
-          )}
-          {errors.memberPasswordConfirm?.type === "validate" && (
-            <p>비밀번호가 일치하지 않습니다</p>
+          {errors && errors?.memberPasswordConfirm && (
+            <p>비밀번호가 일치하지 않습니다.</p>
           )}
         </div>
         <div>

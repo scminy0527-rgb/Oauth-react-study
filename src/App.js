@@ -1,37 +1,74 @@
-import "./App.css";
-import { RouterProvider } from "react-router-dom";
-import router from "./routers/router";
 import { useEffect } from "react";
 import useAuthStore from "./store/useAuthStore";
-import { fetchMe } from "./api/MemberApi";
+import { RouterProvider, useNavigate } from "react-router-dom";
+import router from "./routers/router";
 
 function App() {
-  const { setIsAuthenticated, setMember } = useAuthStore();
+  const { isAuthenticated, member, setMember, setIsAuthenticated } =
+    useAuthStore();
 
-  // 앱이 처음 로드될 때 딱 한 번 실행 (의존성 배열 [] → mount 시 1회)
-  // 목적: 쿠키에 토큰이 있는지 서버에 확인해서 Zustand 상태와 동기화
-  // 이렇게 하지 않으면 쿠키를 삭제해도 localStorage에 남은 isAuthenticated: true 때문에
-  // 로그인된 것처럼 계속 보이는 문제가 생김
+  // const navigate = useNavigate();
+
   useEffect(() => {
-    const syncAuth = async () => {
+    // 최초 한 번 토큰으로 내 정보를 조회하는 서비스
+    const intializeAuth = async () => {
       try {
-        // 쿠키의 토큰을 서버로 보내서 유효한지 확인 + 유저 정보 수신
-        const { data } = await fetchMe();
+        const response = await fetch("http://localhost:10000/api/members/me", {
+          credentials: "include",
+        });
 
-        // 토큰이 유효하면 최신 유저 정보로 Zustand 갱신
-        setMember(data);
-        setIsAuthenticated(true);
-      } catch {
-        // 토큰이 없거나 만료된 경우 → Zustand 상태를 초기화
-        // localStorage에 남아있는 로그인 정보를 지워서 비로그인 상태로 만듦
-        setMember(null);
-        setIsAuthenticated(false);
+        if (!response.ok) throw new Error("Access Token Expired");
+
+        const datas = await response.json();
+        const { success, message, data } = datas;
+        if (success) {
+          setMember(data);
+          setIsAuthenticated(true);
+        }
+      } catch (err) {
+        // accessToken이 만료
+        try {
+          // 한번더 refresh 토큰과 accessToken을 백엔드로 보내서 accessToken 재발급
+          console.log("AccessToken이 만료됨!");
+
+          const response = await fetch(
+            "http://localhost:10000/api/auth/refresh",
+            {
+              method: "POST",
+              credentials: "include",
+            },
+          );
+
+          if (!response.ok) throw new Error("refresh Token Expired");
+
+          // 새로운 accessToken으로 재요청
+          const meReponse = await fetch(
+            "http://localhost:10000/api/members/me",
+            {
+              credentials: "include",
+            },
+          );
+
+          if (!meReponse.ok) throw new Error("Access Token Expired");
+          const datas = await meReponse.json();
+          const { success, message, data } = datas;
+          if (success) {
+            setMember(data);
+            setIsAuthenticated(true);
+          }
+        } catch (err) {
+          // refresh 토큰 만료 -> 재로그인
+          setMember(null);
+          setIsAuthenticated(false);
+          // alert("세션 만료. 다시 로그인 하세요");
+        }
       }
     };
 
-    syncAuth();
-  // setMember, setIsAuthenticated는 Zustand setter라 참조가 바뀌지 않아 무한 루프 없음
-  }, [setMember, setIsAuthenticated]);
+    intializeAuth();
+  }, []);
+
+  console.log(member);
 
   return <RouterProvider router={router} />;
 }
